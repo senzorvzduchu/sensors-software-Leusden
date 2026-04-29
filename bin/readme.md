@@ -1,8 +1,5 @@
 
 
-# airrohr-firmware
-* Poznámka: konfigurace bude smazána
-
 # Návod k aktualizaci
 * Smažte flash paměť (pomocí Airrohr Flasheru nebo FlashESP8266 — viz níže)
 * Stáhněte si soubory FlashESP8266.exe a esptool.exe pro flashování
@@ -13,7 +10,7 @@
 
 # Tento firmware obsahuje
 ## Nové senzory
-* SEN5X
+* SEN55
 * CO2 na SCD30
 
 ## Pluginy
