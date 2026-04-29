@@ -1,29 +1,29 @@
 
 
 # airrohr-firmware
-* Note: config will be removed
+* Poznámka: konfigurace bude smazána
 
-# Instruction for update 
-* Erase Flash (with Airrohr Flasher or FlashESP8266 see below)
-* Download file FlashESP8266 and esptool.exe for flashing
-* Run (on Windows) FlashESP8266
-* Select com port
-* Select blank_4MB.bin to erase
-* Select firmware_xx.bin
+# Návod k aktualizaci
+* Smažte flash paměť (pomocí Airrohr Flasheru nebo FlashESP8266 — viz níže)
+* Stáhněte si soubory FlashESP8266.exe a esptool.exe pro flashování
+* Spusťte (ve Windows) FlashESP8266
+* Vyberte COM port
+* Pro smazání flash paměti vyberte soubor blank_4MB.bin
+* Vyberte soubor firmware_xx.bin (např. latest_cz.bin pro českou verzi)
 
-# This firmware has
-## New Sensors
+# Tento firmware obsahuje
+## Nové senzory
 * SEN5X
-* CO2 on SCD30
+* CO2 na SCD30
 
-## Plugins
+## Pluginy
 * MQTT
-* Static IP
-* Power save
+* Statická IP adresa
+* Úsporný režim
 
 
-## WIFI 
-* password is airrohrcfg
+## Wi-Fi
+* heslo je airrohrcfg
 
 
 
