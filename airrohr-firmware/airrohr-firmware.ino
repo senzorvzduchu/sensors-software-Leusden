@@ -2629,7 +2629,7 @@ static String form_select_lang()
 				 "<select id='current_lang' name='current_lang'>"
 				//  "<option value='BG'>Bulgarian (BG)</option>"
 				//  "<option value='CN'>中文 (CN)</option>"
-				//  "<option value='CZ'>Český (CZ)</option>"
+				    "<option value='CZ'>Čeština (CZ)</option>"
 				    "<option value='DE'>Deutsch (DE)</option>"
 				//  "<option value='DK'>Dansk (DK)</option>"
 				//  "<option value='EE'>Eesti keel (EE)</option>"
@@ -7418,11 +7418,17 @@ static void StartTwoStageOTAUpdate()
 #if defined(ESP8266)
 	debug_outln_info(F("StartTwoStageOTAUpdate"));
 
+#if defined(OTA_USE_BUILD_LANG)
+	// kit builds: always fetch the language this firmware was built with (the config
+	// language can hold a wrong value, e.g. "DE" saved by an older config page without CZ).
+	String lang_variant(CURRENT_LANG);
+#else
 	String lang_variant(cfg::current_lang);
 	if (lang_variant.length() != 2)
 	{
 		lang_variant = CURRENT_LANG;
 	}
+#endif
 
 	lang_variant.toLowerCase();
 

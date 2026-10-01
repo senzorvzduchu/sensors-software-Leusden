@@ -14,9 +14,11 @@ FWL-2026-10-B1 (senzorvzduchu fork, SEN55 kit)
   Senzorvzduchu logo; CSS/logo URLs carry a version so browsers drop the cached old style. Without the flag the
   FijnStofGroep green stays. Logo PNG background made transparent so it follows the banner colour.
 * bin/readme.md rewritten in Czech (files, flashing, first setup, kit defaults).
-* Firmware update server for the kit builds (cz, en): http://senzorvzduchu.github.io/firmware/update (GitHub Pages, plain HTTP,
+* Firmware update server for the kit builds (cz, en): http://fw.senzorvzduchu.cz/firmware/update (GitHub Pages, plain HTTP,
   port 80) instead of air.fijnstofleusden.nl:4488. OTA_BASENAME / FW_DOWNLOAD_PORT overridable from platformio.ini.
   Update loader built from airrohr-update-loader (loader-002.bin).
+  Kit builds (-DOTA_USE_BUILD_LANG) always download their own language variant. Czech added to the language selector
+  (it was commented out, so a saved config silently got "DE").
 
 
 FWL-2025-10-P7

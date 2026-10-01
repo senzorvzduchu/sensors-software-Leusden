@@ -11,7 +11,7 @@
 #if defined(ESP8266)
 #define SENSOR_BASENAME "esp8266-"
 #ifndef OTA_BASENAME
-#define OTA_BASENAME    "air.fijnstofleusden.nl"     // firmware update server host; kit build: senzorvzduchu.github.io (platformio.ini)
+#define OTA_BASENAME    "air.fijnstofleusden.nl"     // firmware update server host; kit build: fw.senzorvzduchu.cz (platformio.ini)
 #endif
 
 #define EU_TIMEZONE "CET-1CEST,M3.5.0/02,M10.5.0/03"  // Europe/Amsterdam, see Timezone: https://leo.leung.xyz/wiki/Timezone
