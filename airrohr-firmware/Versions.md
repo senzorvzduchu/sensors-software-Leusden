@@ -8,7 +8,8 @@ FWL-2026-10-B1 (senzorvzduchu fork, SEN55 kit)
 * SEN55: NOx label "ppm" => "(index)" (de, fr). Czech translation completed for new keys.
 * SEN55 firmware version and idle mode shown on the status page.
 * Build: cz environment defaults for the LaskaKit kit: -DSEN5X_ON=0 (PM fan only during the measurement window),
-  -DSEN5X_PIN16=1 (send to Sensor.Community as SEN5X on pin 16), -DBMX280_READ=1 (BME280 enabled).
+  -DSEN5X_PIN16=1 (send to Sensor.Community as SEN5X on pin 16), -DBMX280_READ=1 (BME280 enabled),
+  -DSEN5X_SYM_PM="SEN55" -DSEN5X_SYM_TH="SEN55" (values named SEN55_* for Madavi, InfluxDB, custom API, MQTT).
 
 
 FWL-2025-10-P7
