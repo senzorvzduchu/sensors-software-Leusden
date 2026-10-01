@@ -11,11 +11,11 @@
 #define INTL_PM_SENSOR "Senzor prachových částic"
 const char INTL_CONFIGURATION[] PROGMEM = "Konfigurace";
 #define INTL_WIFI_SETTINGS "Nastavení Wi-Fi"
-#define INTL_WIFI_NETWORKS "Vyhledávání Wi-Fi sítí ..."
+#define INTL_WIFI_NETWORKS "Hledám Wi-Fi sítě ..."
 #define INTL_LANGUAGE "Jazyk"
-const char INTL_NO_NETWORKS[] PROGMEM = "Žádné Wi-Fi sítě v dosahu.";
+const char INTL_NO_NETWORKS[] PROGMEM = "Žádná Wi-Fi síť nenalezena";
 const char INTL_NETWORKS_FOUND[] PROGMEM = "Dostupné sítě: ";
-const char INTL_AB_HIER_NUR_ANDERN[] PROGMEM = "Rozšířené nastavení (jen pokud víte jistě, co děláte)";
+const char INTL_AB_HIER_NUR_ANDERN[] PROGMEM = "Rozšířené nastavení (jen pokud víte, co děláte)";
 const char INTL_SAVE[] PROGMEM = "Uložit";
 const char INTL_SENSORS[] PROGMEM = "Senzory";
 const char INTL_MORE_SENSORS[] PROGMEM = "Další senzory";
@@ -35,7 +35,7 @@ const char INTL_BMX280[] PROGMEM = "BME280 ({t}, {h}, {p}), BMP280 ({t}, {p})";
 const char INTL_SHT3X[] PROGMEM = "SHT3X ({t}, {h})";
 const char INTL_SCD30[] PROGMEM = "SCD30 ({t}, {h}, CO₂)";
 const char INTL_DS18B20[] PROGMEM = "DS18B20 ({t})";
-const char INTL_DNMS[] PROGMEM = "DNMS ({l_a}) - hlukový senzor";
+const char INTL_DNMS[] PROGMEM = "DNMS ({l_a}) - hluk";
 const char INTL_DNMS_CORRECTION[] PROGMEM = "korekce v dB(A)";
 const char INTL_TEMP_CORRECTION[] PROGMEM = "Korekce v °C";
 const char INTL_HEIGHT_ABOVE_SEALEVEL[] PROGMEM = "Nadmořská výška (m)";
@@ -44,10 +44,10 @@ const char INTL_NEO6M[] PROGMEM = "GPS (NEO 6M)";
 const char INTL_BASICAUTH[] PROGMEM = "Přihlášení heslem";
 #define INTL_REPORT_ISSUE "Nahlásit problém"
 
-const char INTL_FS_WIFI_DESCRIPTION[] PROGMEM = "Wi-Fi senzor v konfiguračním režimu";
+const char INTL_FS_WIFI_DESCRIPTION[] PROGMEM = "Wi-Fi v konfiguračním režimu";
 const char INTL_FS_WIFI_NAME[] PROGMEM = "Název sítě";
 const char INTL_MORE_SETTINGS[] PROGMEM = "Další nastavení";
-const char INTL_AUTO_UPDATE[] PROGMEM = "Automatická aktualizace firmwaru";
+const char INTL_AUTO_UPDATE[] PROGMEM = "Autom. aktualizace firmwaru";
 const char INTL_USE_BETA[] PROGMEM = "Nahrát beta firmware";
 const char INTL_DISPLAY[] PROGMEM = "OLED SSD1306";
 const char INTL_SH1106[] PROGMEM = "OLED SH1106";
@@ -56,10 +56,10 @@ const char INTL_LCD1602_27[] PROGMEM = "LCD 1602 (I2C: 0x27)";
 const char INTL_LCD1602_3F[] PROGMEM = "LCD 1602 (I2C: 0x3F)";
 const char INTL_LCD2004_27[] PROGMEM = "LCD 2004 (I2C: 0x27)";
 const char INTL_LCD2004_3F[] PROGMEM = "LCD 2004 (I2C: 0x3F)";
-const char INTL_DISPLAY_WIFI_INFO[] PROGMEM = "Zobrazit informace o Wi-Fi";
-const char INTL_DISPLAY_DEVICE_INFO[] PROGMEM = "Zobrazit informace o zařízení";
+const char INTL_DISPLAY_WIFI_INFO[] PROGMEM = "Zobrazit info o Wi-Fi";
+const char INTL_DISPLAY_DEVICE_INFO[] PROGMEM = "Zobrazit info o zařízení";
 
-#define INTL_STATIC_IP_TEXT "Nastavení statické IP adresy (vyplňte všechna pole)"
+#define INTL_STATIC_IP_TEXT "Statická IP adresa (vyplňte vše)"
 const char INTL_STATIC_IP[] PROGMEM = "IP adresa";
 const char INTL_STATIC_SUBNET[] PROGMEM = "Maska podsítě";
 const char INTL_STATIC_GATEWAY[] PROGMEM = "Brána";
@@ -81,22 +81,22 @@ const char INTL_SEND_TO[] PROGMEM = "Odeslat na {v}";
 const char INTL_READ_FROM[] PROGMEM = "Číst z {v}";
 const char INTL_SENSOR_IS_REBOOTING[] PROGMEM = "Zařízení se restartuje.";
 const char INTL_RESTART_DEVICE[] PROGMEM = "Restartovat zařízení";
-const char INTL_DELETE_CONFIG[] PROGMEM = "smazat uloženou konfiguraci";
+const char INTL_DELETE_CONFIG[] PROGMEM = "smazat konfiguraci";
 const char INTL_RESTART_SENSOR[] PROGMEM = "Restartovat senzor";
 #define INTL_HOME "Hlavní stránka"
 #define INTL_BACK_TO_HOME "Zpět na hlavní stránku"
 const char INTL_CURRENT_DATA[] PROGMEM = "Aktuální hodnoty";
 const char INTL_DEVICE_STATUS[] PROGMEM = "Stav zařízení";
-#define INTL_ACTIVE_SENSORS_MAP "Mapa aktivních senzorů (externí odkaz)"
+#define INTL_ACTIVE_SENSORS_MAP "Mapa senzorů (externí odkaz)"
 #define INTL_CONFIGURATION_DELETE "Smazat konfiguraci"
 #define INTL_CONFIGURATION_REALLY_DELETE "Opravdu smazat konfiguraci?"
 #define INTL_DELETE "Smazat"
 #define INTL_CANCEL "Zrušit"
 #define INTL_REALLY_RESTART_SENSOR "Opravdu restartovat senzor?"
 #define INTL_RESTART "Restartovat"
-const char INTL_SAVE_AND_RESTART[] PROGMEM = "Uložit konfiguraci a restartovat";
+const char INTL_SAVE_AND_RESTART[] PROGMEM = "Uložit a restartovat";
 #define INTL_FIRMWARE "Verze firmwaru"
-const char INTL_DEBUG_SETTING_TO[] PROGMEM = "Úroveň ladění nastavena na";
+const char INTL_DEBUG_SETTING_TO[] PROGMEM = "Úroveň ladění:";
 #define INTL_NONE "vypnuto"
 #define INTL_ERROR "chyby"
 #define INTL_WARNING "varování"
@@ -113,9 +113,9 @@ const char INTL_PARTICULATE_MATTER[] PROGMEM = "prachové částice";
 const char INTL_TEMPERATURE[] PROGMEM = "teplota";
 const char INTL_HUMIDITY[] PROGMEM = "rel. vlhkost";
 const char INTL_PRESSURE[] PROGMEM = "tlak vzduchu";
-const char INTL_VOC[] PROGMEM = "těkavé organické látky (VOC)";
+const char INTL_VOC[] PROGMEM = "VOC (těkavé látky)";
 const char INTL_VOC_LABLE[] PROGMEM = "(index)";
-const char INTL_NOX[] PROGMEM = "oxidy dusíku (NOx)";
+const char INTL_NOX[] PROGMEM = "NOx (oxidy dusíku)";
 const char INTL_NOX_LABLE[] PROGMEM = "(index)";
 const char INTL_DEW_POINT[] PROGMEM = "rosný bod";
 const char INTL_CO2_PPM[] PROGMEM = "CO₂";
@@ -136,8 +136,8 @@ const char INTL_SIGNAL_QUALITY[] PROGMEM = "kvalita signálu";
 
 #define INTL_MODE "Režim"
 #define INTL_ENABLE_S7000 "Povolit S7000 LTE"
-#define INTL_ENABLE_RCWL_0516 "Povolit radarový detektor pohybu (po povolení restartujte a zadejte přihlašovací údaje serveru)"
-#define INTL_NUMBER_OF_RADARMOTION "Počet detekovaných pohybů"
+#define INTL_ENABLE_RCWL_0516 "Radarový detektor pohybu (po zapnutí restartujte a zadejte server)"
+#define INTL_NUMBER_OF_RADARMOTION "Počet pohybů"
 const char INTL_MOTION_WAIT_TIME[] PROGMEM = "Čekací doba po pohybu";
 const char INTL_FS_WIFI_NAME_2[] PROGMEM = "Název sítě 2";
 const char INTL_FS_WIFI_NAME_3[] PROGMEM = "Název sítě 3";
@@ -162,10 +162,10 @@ const char INTL_MQTT_TOKEN[] PROGMEM = "MQTT token";
 const char INTL_TOKEN[] PROGMEM = "Token";
 #define INTL_ON "Zap."
 #define INTL_OFF "Vyp."
-#define INTL_ENABLE_MOREWIFI "Povolit další Wi-Fi SSID (aktivní po restartu)"
+#define INTL_ENABLE_MOREWIFI "Další Wi-Fi sítě (aktivní po restartu)"
 #define INTL_MORE_TEMP_SENSORS "Teplotní senzory"
 const char INTL_SEN5X_ON[] PROGMEM = "Ventilátor stále zapnutý";
-const char INTL_SEN5X_PIN16[] PROGMEM = "Zap. = PIN 16 (SEN5X), Vyp. = PIN 1 (SPS30)";
+const char INTL_SEN5X_PIN16[] PROGMEM = "Zap = PIN 16 (SEN5X), Vyp = PIN 1 (SPS30)";
 const char INTL_SENSORCOMMUNITY[] PROGMEM = "Sensor.Community:";
 #define INTL_UPDATE_FIRMWARE "Aktualizovat firmware"
 #define INTL_SEN5X_EMP_PM "Emulovat PM SEN5X"

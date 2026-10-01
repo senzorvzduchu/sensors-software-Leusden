@@ -2820,7 +2820,7 @@ static void webserver_config_send_body_get(String &page_content)
 		add_form_checkbox(cfgid, add_sensor_type(info));
 	};
 
-	debug_outln_info(F("begin webserver_config_body_get ..."));
+	debug_outln_info(F("begin webserver_config_body_get ... free heap: "), String(ESP.getFreeHeap()));
 
 	page_content += F("<form method='POST' action='/config' style='width:100%;'>\n"
 					  "<input class='radio' id='r1' name='group' type='radio' checked>"
@@ -2926,6 +2926,7 @@ static void webserver_config_send_body_get(String &page_content)
 
 	server.sendContent(page_content);
 
+	debug_outln_info(F("ws: config panel 2, free heap: "), String(ESP.getFreeHeap()));
 	page_content = tmpl(FPSTR(WEB_DIV_PANEL), String(2));
 
 	add_form_checkbox(Config_has_display, FPSTR(INTL_DISPLAY));
@@ -2982,6 +2983,7 @@ static void webserver_config_send_body_get(String &page_content)
 
 	server.sendContent(page_content);
 
+	debug_outln_info(F("ws: config panel 3, free heap: "), String(ESP.getFreeHeap()));
 	page_content = tmpl(FPSTR(WEB_DIV_PANEL), String(3));
 
 	add_form_checkbox_sensor(Config_sen5x_read, FPSTR(INTL_SEN5X));
@@ -3068,6 +3070,7 @@ static void webserver_config_send_body_get(String &page_content)
 	// Paginate page after ~ 1500 Bytes
 	server.sendContent(page_content);
 
+	debug_outln_info(F("ws: config panel 4, free heap: "), String(ESP.getFreeHeap()));
 	page_content = tmpl(FPSTR(WEB_DIV_PANEL), String(4));
 
 	page_content += tmpl(FPSTR(INTL_SEND_TO), F("APIs"));
