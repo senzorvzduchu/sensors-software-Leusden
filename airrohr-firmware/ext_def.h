@@ -91,7 +91,9 @@ static const char URL_AIRCMS[] PROGMEM = "/php/sensors.php?h=";
 
 static const char FW_DOWNLOAD_HOST[] PROGMEM = OTA_BASENAME;
 static const char FW_DOWNLOAD_URL[] PROGMEM = "/firmware/update";
-#define FW_DOWNLOAD_PORT 4488                                               // 443 is for HTTPS
+#ifndef FW_DOWNLOAD_PORT
+#define FW_DOWNLOAD_PORT 4488                                               // 443 is for HTTPS; kit build: 80 (GitHub Pages, plain HTTP)
+#endif
 
 static const char FW_2ND_LOADER_URL[] PROGMEM = "/firmware/update/loader-002.bin";
 
