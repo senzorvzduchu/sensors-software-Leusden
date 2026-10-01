@@ -7,7 +7,8 @@ FWL-2026-10-B1 (senzorvzduchu fork, SEN55 kit)
 * SEN55: fan auto cleaning interval was 86,400,000 s (~1000 days) instead of 1 day. Fixed (value is in seconds).
 * SEN55: NOx label "ppm" => "(index)" (de, fr). Czech translation completed for new keys.
 * SEN55 firmware version and idle mode shown on the status page.
-* Build: -DSEN5X_ON=0 default for the cz environment (PM fan only during the measurement window).
+* Build: cz environment defaults for the LaskaKit kit: -DSEN5X_ON=0 (PM fan only during the measurement window),
+  -DSEN5X_PIN16=1 (send to Sensor.Community as SEN5X on pin 16), -DBMX280_READ=1 (BME280 enabled).
 
 
 FWL-2025-10-P7

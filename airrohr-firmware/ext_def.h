@@ -298,7 +298,9 @@ static const char SERVER_MQTT[]  PROGMEM = "192.168.1.202";
 #define SEN5X_SYM_TH "SHT3X"                  // temp, hum
 #define SEN5X_SYM_PM "SPS30"                  // PM0.5, PM1, PM2.5, PM4, PM10
 
-#define SEN5X_PIN16 0                         // PIN 16 is SEN55 and PIN1 is SPS30
+#ifndef SEN5X_PIN16
+#define SEN5X_PIN16 0                         // PIN 16 is SEN55 and PIN1 is SPS30 (kit build: 1, station registered as SEN5X)
+#endif
 #define SEN5X_SCD30_TH_API_PIN  17            // Pin 17 for SCD30
 #define SEN5X_SHT3X_TH_API_PIN  7             // Pin 7 for SHT3X (SHT30, SHT35) default.
 
@@ -311,7 +313,9 @@ static const char SERVER_MQTT[]  PROGMEM = "192.168.1.202";
 #define BMP_API_PIN 3
 
 // BMP280/BME280, temperature, pressure (humidity on BME280)
-#define BMX280_READ 0
+#ifndef BMX280_READ
+#define BMX280_READ 0                         // kit build: 1 (BME280 is part of the LaskaKit kit)
+#endif
 #define BMP280_API_PIN 3
 #define BME280_API_PIN 11
 
