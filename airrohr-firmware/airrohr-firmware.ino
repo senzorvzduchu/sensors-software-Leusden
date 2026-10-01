@@ -2622,6 +2622,11 @@ static String form_submit(const String &value)
 
 static String form_select_lang()
 {
+#if defined(OTA_USE_BUILD_LANG)
+	// kit builds always run and update in their compiled language: no selector, just keep the
+	// stored value in sync with the firmware language (fixes a stray "DE" saved by older pages).
+	return F("<input type='hidden' id='current_lang' name='current_lang' value='" CURRENT_LANG "'/>");
+#endif
 	String s_select = F(" selected='selected'");
 	String s = F("<tr>"
 				 "<td>" INTL_LANGUAGE ":&nbsp;</td>"
@@ -2658,7 +2663,13 @@ static String form_select_lang()
 				 "</td>"
 				 "</tr>");
 
-	s.replace("'" + String(cfg::current_lang) + "'>", "'" + String(cfg::current_lang) + "'" + s_select + ">");
+	String lang(cfg::current_lang);
+	if (lang.length() != 2 || s.indexOf("'" + lang + "'>") < 0)
+	{	// stored value empty or not offered => preselect the firmware language.
+		lang = CURRENT_LANG;
+	}
+
+	s.replace("'" + lang + "'>", "'" + lang + "'" + s_select + ">");
 	return s;
 }
 
