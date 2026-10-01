@@ -105,7 +105,8 @@ constexpr const unsigned long DURATION_BEFORE_FORCED_RESTART_MS = ONE_DAY_IN_MS 
 constexpr const unsigned long SAMPLETIME_SEN5X_MS = 1200;								// wait time between two measurements (PM / temp. / hum. sensor).
 constexpr const unsigned long READINGTIME_SEN5X_MS = 15 * SAMPLETIME_SEN5X_MS;			// how many times reading sensor data (PM/No/tem/hum/..) from the SEN5X sensors.
 constexpr const unsigned long SEN5X_WAITING_AFTER_LAST_READ = 31000;                    // 31 sec. waiting time after Start reading mesurement command in ms.
-constexpr const unsigned long SEN5X_AUTO_CLEANING_INTERVAL = 1 * 24 * 60 * 60 * 1000;   // SEN5X Sensor FAN auto cleaning every 1 day(s). time in seconds.
+constexpr const unsigned long SEN5X_AUTO_CLEANING_INTERVAL = 1 * 24 * 60 * 60;          // SEN5X Sensor FAN auto cleaning every 1 day(s) of fan running time. Value in SECONDS (Sensirion default 604800 = 7 days).
+constexpr const unsigned long SEN5X_INIT_WAIT_MS = 12000;                               // do not change the SEN5X measurement mode while the fan cleaning after init (10 s) is running.
 
 constexpr const unsigned long SPS30_WAITING_AFTER_LAST_READ = 11000;                    // waiting time after last reading mesurement data in ms
 constexpr const unsigned long SPS30_AUTO_CLEANING_INTERVAL = 7200;                      // time in seconds

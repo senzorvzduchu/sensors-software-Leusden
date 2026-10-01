@@ -1,3 +1,14 @@
+FWL-2026-10-B1 (senzorvzduchu fork, SEN55 kit)
+* SEN55: when "Fan always on" is off, the sensor is switched to "measurement without PM" (gas-only) between the PM windows
+  instead of being stopped (SEN55 firmware >= 2.0). The VOC/NOx gas index algorithms keep running => valid VOC/NOx index.
+  Older SEN55 firmware: stop/start as before, VOC algorithm state is saved/restored, NOx is reported as invalid ("-").
+* SEN55: averages count only successful reads, separately for PM, T/RH, VOC and NOx. NaN (0x7FFF) and index values
+  outside 1..500 (algorithm blackout) are skipped. No valid reads => value "-" instead of a wrong number.
+* SEN55: fan auto cleaning interval was 86,400,000 s (~1000 days) instead of 1 day. Fixed (value is in seconds).
+* SEN55: NOx label "ppm" => "(index)" (de, fr). Czech translation completed for new keys.
+* SEN55 firmware version and idle mode shown on the status page.
+* Build: -DSEN5X_ON=0 default for the cz environment (PM fan only during the measurement window).
+
 
 FWL-2025-10-P7
 * Add Tera NextPM sensor Heater mode option: (NONE, OFF, ON, AUTO-REGULATED, HEATING_CONTROL).

@@ -52,7 +52,11 @@
  * 			Change to													*
  * 					 SHT3x for temperature, humidity (pin 7)			*
  * 																		*
- * Remark: SEN5X sensor start/stop is enabled then Nox value = 0.		*
+ * Remark: SEN5X "Fan always on" off => between the PM windows the  *
+ * sensor runs in "measurement without PM" (gas-only) mode, so the   *
+ * VOC/NOx index algorithms keep running (SEN5X firmware >= 2.0).    *
+ * Older SEN5X firmware: stop/start, NOx index invalid, VOC state    *
+ * saved/restored.                                                   *
  * startUp time = 35 sec. then 15 times read PM/NC, Temp., Hum value.	*
  * Nox startUp time at least 60 sec. then read Nox value (F.F.U)		*
  * 																		*
@@ -151,7 +155,7 @@
  #define SOFTWARE_VERSION_STR "FWL-2025-10-B7"
 #else
 // Production / Release version:
- #define SOFTWARE_VERSION_STR "FWL-2026-08-P1"
+ #define SOFTWARE_VERSION_STR "FWL-2026-10-B1"
 #endif
 
 String SOFTWARE_VERSION(SOFTWARE_VERSION_STR);
@@ -820,7 +824,16 @@ float value_SEN5X_H = 0.0;
 float value_SEN5X_VOC = 0.0;
 float value_SEN5X_NOX = 0.0;
 
-uint16_t SEN5X_measurement_count = 0;
+uint16_t SEN5X_pm_count = 0;						// successful PM reads in this interval (all values valid).
+uint16_t SEN5X_th_count = 0;						// successful temperature / humidity reads.
+uint16_t SEN5X_voc_count = 0;						// VOC index reads with a valid value (1..500).
+uint16_t SEN5X_nox_count = 0;						// NOx index reads with a valid value (1..500).
+uint8_t SEN5X_fw_major = 0;							// SEN5X sensor firmware version (2.0 or newer can switch PM on/off while measuring).
+uint8_t SEN5X_fw_minor = 0;
+unsigned long SEN5X_init_millis = 0;				// millis() at init, the fan cleaning after init must finish before a mode change.
+uint8_t SEN5X_voc_state[8];							// VOC algorithm state, saved before stop and restored before start (old firmware only).
+bool SEN5X_voc_state_valid = false;
+static bool sen5xCanSwitchPm();
 unsigned long SEN5X_read_counter = 0;
 unsigned long SEN5X_read_error_counter = 0;
 unsigned long SEN5X_read_timer = 0;
@@ -1931,6 +1944,9 @@ void printModuleVersions()
     } 
 	else 
 	{
+        SEN5X_fw_major = firmwareMajor;
+        SEN5X_fw_minor = firmwareMinor;
+
         Debug.print(F("Firmware: "));
         Debug.print(firmwareMajor);
         Debug.print(F("."));
@@ -3879,6 +3895,23 @@ static void webserver_status()
 		versionHtml += String( BR_TAG);
 		versionHtml += FPSTR(INTL_SEN5X_ON);
 		versionHtml += cfg::sen5x_on == true ? F(": Enabled") : F(": Disabled");
+		versionHtml += String( BR_TAG);
+		versionHtml += F("SEN5X firmware: ");
+		versionHtml += String(SEN5X_fw_major) + '.' + String(SEN5X_fw_minor);
+		versionHtml += String( BR_TAG);
+		versionHtml += F("Idle mode: ");
+		if (cfg::sen5x_on)
+		{
+			versionHtml += F("none (fan always on, VOC/NOx valid)");
+		}
+		else if (sen5xCanSwitchPm())
+		{
+			versionHtml += F("gas-only, PM fan off (VOC/NOx valid)");
+		}
+		else
+		{
+			versionHtml += F("stop (old SEN5X firmware: NOx invalid, VOC state restored)");
+		}
 		//versionHtml += String( BR_TAG);
 
 		add_table_row_from_value(page_content, FPSTR(emptyString.c_str()), versionHtml);
@@ -4174,7 +4207,7 @@ static void webserver_data_json()
 			s1 += ',';
 
 			s1.replace(F("_co2_ppm"), F("_NOx"));
-			//add_Value2Json(s1, FPSTR((String(SENSORS_SEN55) + F("_NOx")).c_str()), FPSTR(DBG_TXT_NOX), last_value_SEN5X_NOX);
+			add_Value2Json(s1, FPSTR((String(SENSORS_SEN55) + F("_NOx")).c_str()), FPSTR(DBG_TXT_NOX), last_value_SEN5X_NOX);
 			add_Value2Json(s1, FPSTR((String(SENSORS_SEN55) + F("_VOC")).c_str()), FPSTR(DBG_TXT_VOC), last_value_SEN5X_VOC);
 
 			s1.remove(s1.length() - 1);				// remove ','
@@ -4224,7 +4257,7 @@ static void webserver_metrics_endpoint()
 		data_sensemap += ',';
 
 		data_sensemap.replace(F("_co2_ppm"), F("_NOx"));
-		// add_Value2Json(s1, FPSTR((String(SENSORS_SEN55) + F("_NOx")).c_str()), FPSTR(DBG_TXT_NOX), last_value_SEN5X_NOX);
+		add_Value2Json(data_sensemap, FPSTR((String(SENSORS_SEN55) + F("_NOx")).c_str()), FPSTR(DBG_TXT_NOX), last_value_SEN5X_NOX);
 		add_Value2Json(data_sensemap, FPSTR((String(SENSORS_SEN55) + F("_VOC")).c_str()), FPSTR(DBG_TXT_VOC), last_value_SEN5X_VOC);
 
 		data_sensemap.remove(data_sensemap.length() - 1);	// remove ','
@@ -6479,44 +6512,116 @@ static void fetchSensorIPS(String &s)
 }
 
 /*****************************************************************
- *  read SEN5X PM sensor values
- *
- *  Send NOx value to outside
+ * SEN5X helpers: PM on/off switching between the PM windows.    *
+ *                                                               *
+ * SEN5X firmware >= 2.0: switch directly between "measurement"  *
+ * and "measurement without PM" (fan + laser off). The RH/T/VOC/ *
+ * NOx part keeps running, so the VOC and NOx gas index          *
+ * algorithms are never reset and their values stay valid.       *
+ * Older firmware: stop/start (idle mode needed). The VOC        *
+ * algorithm state is saved and restored, the NOx algorithm is   *
+ * reset by every stop, so the NOx index is reported as invalid. *
+ *****************************************************************/
+static bool sen5xCanSwitchPm()
+{
+	return SEN5X_fw_major >= 2;
+}
+
+static bool sen5xGasIndexValid(float index)
+{	// 0 / NaN (0x7FFF) = algorithm blackout or not available, valid index range is 1..500.
+	return !isnan(index) && index >= 1.0f && index <= 500.0f;
+}
+
+static void sen5xLogError(const __FlashStringHelper *what, uint16_t error)
+{
+	char errorMessage[64];
+	errorToString(error, errorMessage, sizeof(errorMessage));
+	Debug.print(what);
+	Debug.println(errorMessage);
+}
+
+static void sen5xPmOff()
+{
+	uint16_t error;
+
+	if (sen5xCanSwitchPm())
+	{
+		debug_outln_verbose(F("SEN5X PM off, gas-only mode. time: "), String(msSince(starttime)));
+		error = sen5x.startMeasurementWithoutPm();
+
+		if (error)
+		{
+			sen5xLogError(F("Error trying to execute startMeasurementWithoutPm(): "), error);
+		}
+		return;
+	}
+
+	debug_outln_verbose(F("SEN5X STOP Measurement. time: "), String(msSince(starttime)));
+	SEN5X_voc_state_valid = (sen5x.getVocAlgorithmState(SEN5X_voc_state, sizeof(SEN5X_voc_state)) == 0);
+	error = sen5x.stopMeasurement();
+
+	if (error)
+	{
+		sen5xLogError(F("Error trying to execute stopMeasurement(): "), error);
+	}
+}
+
+static void sen5xPmOn()
+{
+	uint16_t error;
+
+	if (!sen5xCanSwitchPm() && SEN5X_voc_state_valid)
+	{	// idle mode: restore the VOC algorithm state, it is applied by the next start.
+		error = sen5x.setVocAlgorithmState(SEN5X_voc_state, sizeof(SEN5X_voc_state));
+
+		if (error)
+		{
+			sen5xLogError(F("Error trying to execute setVocAlgorithmState(): "), error);
+		}
+	}
+
+	debug_outln_verbose(F("SEN5X START Measurement (PM on). time: "), String(msSince(starttime)));
+	error = sen5x.startMeasurement();
+
+	if (error)
+	{
+		sen5xLogError(F("Error trying to execute startMeasurement(): "), error);
+	}
+}
+
+/*****************************************************************
+ *  read SEN5X PM sensor values                                  *
  *****************************************************************/
 static void fetchSensorSEN5X(String &s)
 {
-	//String result_SEN5X = emptyString;
 	RESERVE_STRING(result_SEN5X, 10);
 	result_SEN5X = F("SEN55_");
 
-	// if (memcmp(SEN5X_type, SENSOR_SEN50, 6) == 0)
-	// {
-	// 	//result_SEN5X = F("SEN50_");
-	// 	debug_outln_verbose(FPSTR(DBG_TXT_START_READING), FPSTR(SENSORS_SEN50));
-	// }
-
-	// if (memcmp(SEN5X_type, SENSOR_SEN54, 6) == 0)
-	// {
-	// 	//result_SEN5X = F("SEN54_");
-	// 	debug_outln_verbose(FPSTR(DBG_TXT_START_READING), FPSTR(SENSORS_SEN54));
-	// }
-
 	if (memcmp(SEN5X_type, SENSOR_SEN55, 6) == 0)
 	{
-		//result_SEN5X = F("SEN55_");
 		debug_outln_verbose(FPSTR(DBG_TXT_START_READING), FPSTR(SENSORS_SEN55));
 	}
 
-	last_value_SEN5X_P0 = value_SEN5X_P0 / SEN5X_measurement_count;
-	last_value_SEN5X_P2 = value_SEN5X_P2 / SEN5X_measurement_count;
-	last_value_SEN5X_P4 = value_SEN5X_P4 / SEN5X_measurement_count;
-	last_value_SEN5X_P1 = value_SEN5X_P1 / SEN5X_measurement_count;
-	last_value_SEN5X_N05 = value_SEN5X_N05 / SEN5X_measurement_count;
-	last_value_SEN5X_N1 = value_SEN5X_N1 / SEN5X_measurement_count;
-	last_value_SEN5X_N25 = value_SEN5X_N25 / SEN5X_measurement_count;
-	last_value_SEN5X_N4 = value_SEN5X_N4 / SEN5X_measurement_count;
-	last_value_SEN5X_N10 = value_SEN5X_N10 / SEN5X_measurement_count;
-	last_value_SEN5X_TS = value_SEN5X_TS / SEN5X_measurement_count;
+	if (SEN5X_pm_count > 0)
+	{	// average of the successful PM reads only.
+		last_value_SEN5X_P0 = value_SEN5X_P0 / SEN5X_pm_count;
+		last_value_SEN5X_P2 = value_SEN5X_P2 / SEN5X_pm_count;
+		last_value_SEN5X_P4 = value_SEN5X_P4 / SEN5X_pm_count;
+		last_value_SEN5X_P1 = value_SEN5X_P1 / SEN5X_pm_count;
+		last_value_SEN5X_N05 = value_SEN5X_N05 / SEN5X_pm_count;
+		last_value_SEN5X_N1 = value_SEN5X_N1 / SEN5X_pm_count;
+		last_value_SEN5X_N25 = value_SEN5X_N25 / SEN5X_pm_count;
+		last_value_SEN5X_N4 = value_SEN5X_N4 / SEN5X_pm_count;
+		last_value_SEN5X_N10 = value_SEN5X_N10 / SEN5X_pm_count;
+		last_value_SEN5X_TS = value_SEN5X_TS / SEN5X_pm_count;
+	}
+	else
+	{	// no valid PM reading in this interval => invalid ("-").
+		last_value_SEN5X_P0 = last_value_SEN5X_P2 = last_value_SEN5X_P4 = last_value_SEN5X_P1 = -1.0;
+		last_value_SEN5X_N05 = last_value_SEN5X_N1 = last_value_SEN5X_N25 = last_value_SEN5X_N4 = last_value_SEN5X_N10 = -1.0;
+		last_value_SEN5X_TS = -1.0;
+		debug_outln_error(F("SEN5X: no valid PM readings in this interval."));
+	}
 
 	debug_outln_info(FPSTR(DBG_TXT_SEP));
 
@@ -6532,24 +6637,16 @@ static void fetchSensorSEN5X(String &s)
 
 	debug_outln_info( FPSTR((result_SEN5X + "read counter: ").c_str()), String(SEN5X_read_counter));
 	debug_outln_info( FPSTR((result_SEN5X + "read error counter: ").c_str()), String(SEN5X_read_error_counter));
+	debug_outln_info( FPSTR((result_SEN5X + "valid PM reads: ").c_str()), String(SEN5X_pm_count));
 
 	SEN5X_read_counter = 0;
 	SEN5X_read_error_counter = 0;
+	SEN5X_pm_count = 0;
 	value_SEN5X_P0 = value_SEN5X_P1 = value_SEN5X_P2 = value_SEN5X_P4 = 0.0;
 	value_SEN5X_N05 = value_SEN5X_N1 = value_SEN5X_N25 = value_SEN5X_N10 = value_SEN5X_N4 = 0.0;
 	value_SEN5X_TS = 0.0;
 
 	debug_outln_info(FPSTR(DBG_TXT_SEP));
-
-	// if (memcmp(SEN5X_type, SENSOR_SEN50, 6) == 0)
-	// {
-	// 	debug_outln_verbose(FPSTR(DBG_TXT_END_READING), FPSTR(SENSORS_SEN50));
-	// }
-
-	// if (memcmp(SEN5X_type, SENSOR_SEN54, 6) == 0)
-	// {
-	// 	debug_outln_verbose(FPSTR(DBG_TXT_END_READING), FPSTR(SENSORS_SEN54));
-	// }
 
 	if (memcmp(SEN5X_type, SENSOR_SEN55, 6) == 0)
 	{
@@ -6569,17 +6666,17 @@ static void fetchSensorSEN5X(String &s)
 static void fetchSensorSEN5X_THN(String &s)
 {
 	if (memcmp(SEN5X_type, SENSOR_SEN55, 6) == 0 /*|| memcmp(SEN5X_type, SENSOR_SEN54, 6) == 0*/ )
-	{
-		last_value_SEN5X_T = value_SEN5X_T / SEN5X_measurement_count;
-		last_value_SEN5X_H = value_SEN5X_H / SEN5X_measurement_count;
-		last_value_SEN5X_NOX = value_SEN5X_NOX / SEN5X_measurement_count;
-		last_value_SEN5X_VOC = value_SEN5X_VOC / SEN5X_measurement_count;
+	{	// average of the valid reads only, no valid read => invalid value ("-").
+		last_value_SEN5X_T   = SEN5X_th_count  > 0 ? value_SEN5X_T   / SEN5X_th_count  : -128.0;
+		last_value_SEN5X_H   = SEN5X_th_count  > 0 ? value_SEN5X_H   / SEN5X_th_count  : -1.0;
+		last_value_SEN5X_VOC = SEN5X_voc_count > 0 ? value_SEN5X_VOC / SEN5X_voc_count : -1.0;
+		last_value_SEN5X_NOX = SEN5X_nox_count > 0 ? value_SEN5X_NOX / SEN5X_nox_count : -1.0;
 
-		//String result_SEN5X((char*)0);
-		//result_SEN5X.reserve(10);
-		// same as:
-		//RESERVE_STRING(result_SEN5X, 10);
-		//result_SEN5X = F("SEN5X_");
+		if (!cfg::sen5x_on && !sen5xCanSwitchPm())
+		{	// old SEN5X firmware with start/stop: every stop resets the NOx algorithm, the index is meaningless.
+			last_value_SEN5X_NOX = -1.0;
+		}
+
 		String result_SEN5X = F("SEN5X_");
 
 		debug_outln_verbose(FPSTR(DBG_TXT_START_READING), result_SEN5X);
@@ -6587,19 +6684,17 @@ static void fetchSensorSEN5X_THN(String &s)
 		add_Value2Json(s, FPSTR((result_SEN5X + F("temperature")).c_str()), FPSTR(DBG_TXT_TEMPERATURE), last_value_SEN5X_T);
 		add_Value2Json(s, FPSTR((result_SEN5X + F("humidity")).c_str()),    FPSTR(DBG_TXT_HUMIDITY),    last_value_SEN5X_H);
 
-	// sensor community server can't handle this ID, (server response code = 400)
-	// only VOC value debugline.
-	// if (memcmp(cfg::sen5x_sym_pm, SENSOR_SEN55, 6) == 0)
-	// {
-	// 	add_Value2Json(s, FPSTR((result_SEN5X + F("VOC")).c_str()), FPSTR(DBG_TXT_VOC), last_value_SEN5X_VOC);
-	//	debug_outln_info( FPSTR(DBG_TXT_VOC), last_value_SEN5X_VOC);
-	// }
+		// VOC / NOx index are not sent to Sensor.Community (server response code = 400),
+		// they are shown on the local web page, data.json and MQTT only.
+		debug_outln_info(F("SEN5X valid reads T/RH: "), String(SEN5X_th_count) + F(", VOC: ") + String(SEN5X_voc_count) + F(", NOx: ") + String(SEN5X_nox_count));
+		debug_outln_info(F("SEN5X VOC index: "), String(last_value_SEN5X_VOC));
+		debug_outln_info(F("SEN5X NOx index: "), String(last_value_SEN5X_NOX));
 
 		debug_outln_verbose(FPSTR(DBG_TXT_END_READING), result_SEN5X);
 	}
 
 	value_SEN5X_H = value_SEN5X_T = value_SEN5X_NOX = value_SEN5X_VOC = 0.0;
-	SEN5X_measurement_count = 0;
+	SEN5X_th_count = SEN5X_voc_count = SEN5X_nox_count = 0;
 }
 
 /*****************************************************************
@@ -6865,29 +6960,31 @@ static __noinline void fetchSensorGPS(String &s)
  *****************************************************************/
 static void GetSen5XSensorData()
 {
+	if (msSince(SEN5X_init_millis) < SEN5X_INIT_WAIT_MS)
+	{	// fan cleaning after init still running, no mode change / reads yet.
+		return;
+	}
+
 	if (cfg::sending_intervall_ms > (SEN5X_WAITING_AFTER_LAST_READ + READINGTIME_SEN5X_MS) &&
 		msSince(starttime) < (cfg::sending_intervall_ms - (SEN5X_WAITING_AFTER_LAST_READ + READINGTIME_SEN5X_MS)))
-	{
+	{	// idle window: PM measurement not needed.
 		if (is_SEN5X_running)
 		{
 			if (!cfg::sen5x_on)
 			{
-				debug_outln_verbose(F("SEN5X STOP Measurement. time: "), String(msSince(starttime)));
-	
-				sen5x.stopMeasurement();
+				sen5xPmOff();
 			}
 
-				is_SEN5X_running = false;
+			is_SEN5X_running = false;
 		}
 	}
 	else if (is_SEN5X_running && (msSince(starttime) - SEN5X_read_timer) > SEN5X_WAITING_AFTER_LAST_READ)
-	{
+	{	// PM window, warm-up done: read the sensor.
 		debug_outln_verbose(FPSTR(DBG_TXT_START_READING), FPSTR(SENSORS_SEN55));
 		debug_outln_verbose(FPSTR(DBG_TXT_SEP));
 		debug_outln_verbose(F("SEN5X START sensor readings. time: "), String((msSince(starttime) - (SEN5X_read_timer + (SEN5X_WAITING_AFTER_LAST_READ - SAMPLETIME_SEN5X_MS)))) + F(" msec.") );
 
 		uint16_t error;
-		char errorMessage[256];
 
 		float massConcentrationPm1p0;
 		float massConcentrationPm2p5;
@@ -6905,16 +7002,22 @@ static void GetSen5XSensorData()
 		float noxIndex;
 
 		error = sen5x.readMeasuredPmValues(massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0, massConcentrationPm10p0,
-										   numberConcentrationPm0p5, numberConcentrationPm1p0, numberConcentrationPm2p5, 
-										   numberConcentrationPm4p0, numberConcentrationPm10p0, 
+										   numberConcentrationPm0p5, numberConcentrationPm1p0, numberConcentrationPm2p5,
+										   numberConcentrationPm4p0, numberConcentrationPm10p0,
 										   typicalParticleSize);
 		SEN5X_read_counter++;
 
 		if (error)
 		{
-			Debug.print( F("Error trying to execute readMeasuredPmValues(): "));
-			errorToString(error, errorMessage, sizeof(errorMessage));
-			Debug.println(errorMessage);
+			SEN5X_read_error_counter++;
+			sen5xLogError(F("Error trying to execute readMeasuredPmValues(): "), error);
+		}
+		else if (isnan(massConcentrationPm1p0) || isnan(massConcentrationPm2p5) || isnan(massConcentrationPm4p0) || isnan(massConcentrationPm10p0) ||
+				 isnan(numberConcentrationPm0p5) || isnan(numberConcentrationPm1p0) || isnan(numberConcentrationPm2p5) ||
+				 isnan(numberConcentrationPm4p0) || isnan(numberConcentrationPm10p0) || isnan(typicalParticleSize))
+		{	// 0xFFFF / 0x7FFF = value not available (yet), skip this sample.
+			SEN5X_read_error_counter++;
+			debug_outln_verbose(F("SEN5X PM values not available (NaN), sample skipped."));
 		}
 		else
 		{
@@ -6928,6 +7031,7 @@ static void GetSen5XSensorData()
 			value_SEN5X_N4 += numberConcentrationPm4p0;
 			value_SEN5X_N10 += numberConcentrationPm10p0;
 			value_SEN5X_TS += typicalParticleSize;
+			SEN5X_pm_count++;
 
 			debug_outln_verbose(F("PM1 (sec.): "), String(massConcentrationPm1p0));
 			debug_outln_verbose(F("PM2.5 (sec.): "), String(massConcentrationPm2p5));
@@ -6936,25 +7040,34 @@ static void GetSen5XSensorData()
 		}
 
 		error = sen5x.readMeasuredValues(massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0, massConcentrationPm10p0,
-										 ambientHumidity, ambientTemperature, 
+										 ambientHumidity, ambientTemperature,
 										 vocIndex, noxIndex);
 
 		if (error)
 		{
-			Debug.print(F("Error trying to execute readMeasuredTHValues(): "));
-			errorToString(error, errorMessage, sizeof(errorMessage));
-			Debug.println(errorMessage);
+			SEN5X_read_error_counter++;
+			sen5xLogError(F("Error trying to execute readMeasuredValues(): "), error);
 		}
 		else
-		{
-            value_SEN5X_T += ambientTemperature;
-			value_SEN5X_H += ambientHumidity;
+		{	// count every value separately, only valid values go into the average.
+			if (!isnan(ambientTemperature) && !isnan(ambientHumidity))
+			{
+				value_SEN5X_T += ambientTemperature;
+				value_SEN5X_H += ambientHumidity;
+				SEN5X_th_count++;
+			}
 
-			//value_SEN5X_T += real_temperature(ambientTemperature);
-			//value_SEN5X_H += real_humidity(ambientHumidity);
+			if (sen5xGasIndexValid(vocIndex))
+			{
+				value_SEN5X_VOC += vocIndex;
+				SEN5X_voc_count++;
+			}
 
-			value_SEN5X_VOC += vocIndex;
-			value_SEN5X_NOX += noxIndex;
+			if (sen5xGasIndexValid(noxIndex))
+			{
+				value_SEN5X_NOX += noxIndex;
+				SEN5X_nox_count++;
+			}
 
 			debug_outln_verbose(F("Temp: "), String(ambientTemperature));
 			debug_outln_verbose(F("Hum: "),  String(ambientHumidity));
@@ -6962,27 +7075,21 @@ static void GetSen5XSensorData()
 			debug_outln_verbose(F("NOx: "), String(noxIndex));
 		}
 
-		SEN5X_measurement_count++;
-
-		// Set sensor read time on 1 sec. => 5 reads => Nox value = 0 (start/stop)
+		// next sample after SAMPLETIME_SEN5X_MS.
 		SEN5X_read_timer = msSince(starttime + (SEN5X_WAITING_AFTER_LAST_READ - SAMPLETIME_SEN5X_MS));
-		
+
 		debug_outln_verbose(FPSTR(DBG_TXT_SEP));
 		debug_outln_verbose(FPSTR(DBG_TXT_END_READING), FPSTR(SENSORS_SEN55));
 	}
-	else
-	{
-		if (!is_SEN5X_running)
+	else if (!is_SEN5X_running)
+	{	// PM window starts: PM on, then SEN5X_WAITING_AFTER_LAST_READ warm-up before the first read.
+		if (!cfg::sen5x_on)
 		{
-			if (!cfg::sen5x_on)
-			{
-				debug_outln_verbose(F("SEN5X START Measurement. Time: "), String(msSince(starttime)));
-				sen5x.startMeasurement();
-			}
-
-			SEN5X_read_timer = msSince(starttime);
-			is_SEN5X_running = true;
+			sen5xPmOn();
 		}
+
+		SEN5X_read_timer = msSince(starttime);
+		is_SEN5X_running = true;
 	}
 }
 
@@ -8279,7 +8386,13 @@ static void initSEN5X()
 
 		debug_outln(F("SEN5X sensor active. Sensor Fan Cleaning and Warm-Up for the first Measurement."), DEBUG_MIN_INFO);
 		sen5x.startFanCleaning();
-		is_SEN5X_running = false;
+		SEN5X_init_millis = millis();
+		is_SEN5X_running = true;					// PM is on now, the first idle window switches it off (if "Fan always on" is off).
+
+		if (!cfg::sen5x_on)
+		{
+			debug_outln_info(F("SEN5X idle mode: "), sen5xCanSwitchPm() ? F("gas-only (PM fan off, VOC/NOx valid)") : F("stop (old firmware, NOx invalid)"));
+		}
 	}
 }
 

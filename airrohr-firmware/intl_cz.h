@@ -113,9 +113,11 @@ const char INTL_PARTICULATE_MATTER[] PROGMEM = "prachových částic";
 const char INTL_TEMPERATURE[] PROGMEM = "teplota";
 const char INTL_HUMIDITY[] PROGMEM = "rel. vlhkost";
 const char INTL_PRESSURE[] PROGMEM = "tlak vzduchu";
-const char INTL_VOC[] PROGMEM = "";
-const char INTL_NOX[] PROGMEM = "";
-const char INTL_DEW_POINT[] PROGMEM = "";
+const char INTL_VOC[] PROGMEM = "těkavé organické látky (VOC)";
+const char INTL_VOC_LABLE[] PROGMEM = "(index)";
+const char INTL_NOX[] PROGMEM = "oxidy dusíku (NOx)";
+const char INTL_NOX_LABLE[] PROGMEM = "(index)";
+const char INTL_DEW_POINT[] PROGMEM = "rosný bod";
 const char INTL_CO2_PPM[] PROGMEM = "ppm CO₂";
 const char INTL_LEQ_A[] PROGMEM = "LAeq";
 const char INTL_LA_MIN[] PROGMEM = "LA min";
@@ -152,5 +154,21 @@ const char INTL_SIM_APN[] PROGMEM = "APN";
 const char INTL_SIM_TYPE[] PROGMEM = "Typ";
 const char INTL_SIM_GPS[] PROGMEM = "GPS";
 const char INTL_SIM_ID[] PROGMEM = "ID";
+
+// Keys added upstream (FWL-2025/2026) after the Czech translation was created.
+#define INTL_NPM_HEATER_MODE "Režim ohřevu"
+#define INTL_NPM_HEATER_ELEMENT  "Ohřev "
+const char INTL_MQTT_TOKEN[] PROGMEM = "MQTT token";
+const char INTL_TOKEN[] PROGMEM = "Token";
+#define INTL_ON "Zap."
+#define INTL_OFF "Vyp."
+#define INTL_ENABLE_MOREWIFI "Povolit další Wi-Fi SSID (aktivní po restartu)"
+#define INTL_MORE_TEMP_SENSORS "Teplotní senzory"
+const char INTL_SEN5X_ON[] PROGMEM = "Ventilátor stále zapnutý";
+const char INTL_SEN5X_PIN16[] PROGMEM = "Zap. = PIN 16 (SEN5X), Vyp. = PIN 1 (SPS30)";
+const char INTL_SENSORCOMMUNITY[] PROGMEM = "Sensor.Community:";
+#define INTL_UPDATE_FIRMWARE "Aktualizovat firmware"
+#define INTL_SEN5X_EMP_PM "Emulovat PM SEN5X"
+#define INTL_SEN5X_EMP_TH "Emulovat T/RH SEN5X"
 
 #include "./airrohr-logo-common.h"
