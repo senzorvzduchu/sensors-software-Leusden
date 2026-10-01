@@ -10,6 +10,10 @@ FWL-2026-10-B1 (senzorvzduchu fork, SEN55 kit)
 * Build: cz environment defaults for the LaskaKit kit: -DSEN5X_ON=0 (PM fan only during the measurement window),
   -DSEN5X_PIN16=1 (send to Sensor.Community as SEN5X on pin 16), -DBMX280_READ=1 (BME280 enabled),
   -DSEN5X_SYM_PM="SEN55" -DSEN5X_SYM_TH="SEN55" (values named SEN55_* for Madavi, InfluxDB, custom API, MQTT).
+* Web page: -DSVZ_THEME (cz and en builds) = Senzorvzduchu colours (banner #ff716a, buttons/tabs #4553d5, footer #ffc9c6) and
+  Senzorvzduchu logo; CSS/logo URLs carry a version so browsers drop the cached old style. Without the flag the
+  FijnStofGroep green stays. Logo PNG background made transparent so it follows the banner colour.
+* bin/readme.md rewritten in Czech (files, flashing, first setup, kit defaults).
 
 
 FWL-2025-10-P7

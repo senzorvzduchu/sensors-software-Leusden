@@ -1,6 +1,17 @@
 
 
 #define INTL_FORUM "Forum Sensor.Community"
+// Web page colour theme. -DSVZ_THEME (platformio.ini) = Senzorvzduchu branding (colours of the Senzorvzduchu logo).
+#ifdef SVZ_THEME
+#define THEME_BANNER "#ff716a"		// header banner: logo coral
+#define THEME_UI "#4553d5"			// buttons, tabs, selects: logo blue
+#define THEME_FOOTER "#ffc9c6"		// footer: light salmon from the Senzorvzduchu design system
+#else
+#define THEME_BANNER "#055d52"		// FijnStofGroep green
+#define THEME_UI "#055d52"
+#define THEME_FOOTER "#f5f211"		// FijnStofGroep yellow
+#endif
+
 const char TXT_CONTENT_TYPE_JSON[] PROGMEM = "application/json";
 const char TXT_CONTENT_TYPE_INFLUXDB[] PROGMEM = "application/x-www-form-urlencoded";
 const char TXT_CONTENT_TYPE_TEXT_HTML[] PROGMEM = "text/html; charset=utf-8";
@@ -60,42 +71,42 @@ const char WEB_PAGE_HEADER[] PROGMEM = "<!DOCTYPE html><html lang='" INTL_LANG "
 const char WEB_PAGE_STATIC_CSS[] PROGMEM = "	\
 body{font-family:Arial,sans-serif;margin:0}	\
 .content{margin:10px}	\
-.footer{height:48px;background:#f5f211;width:100%}	\
+.footer{height:48px;background:" THEME_FOOTER ";width:100%}	\
 .r{text-align:right}	\
 td{vertical-align:top}	\
 .v>tbody>tr:nth-child(odd){background:#e7e6d1}	\
-.b{text-decoration:none;padding:10px;background:#055d52;color:#fff;display:block;width:auto;border-radius:5px;}	\
+.b{text-decoration:none;padding:10px;background:" THEME_UI ";color:#fff;display:block;width:auto;border-radius:5px;}	\
 .c{text-decoration:none;padding:10px;background:#5d0505;color:#fff;display:block;width:auto;border-radius:5px;}	\
 .wifi{background:0 0;color:#00f;padding:5px;display:inline;border:0;}	\
 input[type=text]{width:100%}	\
 input[type=password]{width:100%}	\
 input[type=submit]{color:#fff;text-align:left;cursor:pointer;border-radius:5px;font-size:medium;background:#b33;padding:9px!important;width:100%;border-style:none}	\
 input[type=submit]:hover{background:#167908}\
-.s_green{padding:9px !important;width:100%;border-style:none;background:#055d52;color:#fff;text-align:left}\
+.s_green{padding:9px !important;width:100%;border-style:none;background:" THEME_UI ";color:#fff;text-align:left}\
 .tabs{display:flex;flex-direction:row;align-items:stretch;align-content:flex-end;justify-content:flex-start}\
 .tab{padding:10px 20px;display:inline-block;color:#333}\
 .panels{min-height:200px;overflow:hidden;padding:20px;border:2px solid #044f45;margin-bottom:1em;}\
 .radio{display:none}.panel{display:none}\
-.canvas{min-height:118px;background:#055d52;margin-bottom:20px;}\
+.canvas{min-height:118px;background:" THEME_BANNER ";margin-bottom:20px;}\
 #r4:checked~.panels>#panel4,#r1:checked~.panels>#panel1,#r3:checked~.panels>#panel3,#r2:checked~.panels>#panel2{display:block}\
-#r4:checked~.tabs>#tab4,#r1:checked~.tabs>#tab1,#r3:checked~.tabs>#tab3,#r2:checked~.tabs>#tab2{background:#055d52;color:#fff}\
-#sen5x_sym_pm{background:#055d52;color:#fff}\
-#sen5x_sym_th{background:#055d52;color:#fff}\
-#sen5x_pin{background:#055d52;color:#fff}\
-#s7000_mode{background:#055d52;color:#fff}\
-#current_lang{background:#055d52;color:#fff}\
+#r4:checked~.tabs>#tab4,#r1:checked~.tabs>#tab1,#r3:checked~.tabs>#tab3,#r2:checked~.tabs>#tab2{background:" THEME_UI ";color:#fff}\
+#sen5x_sym_pm{background:" THEME_UI ";color:#fff}\
+#sen5x_sym_th{background:" THEME_UI ";color:#fff}\
+#sen5x_pin{background:" THEME_UI ";color:#fff}\
+#s7000_mode{background:" THEME_UI ";color:#fff}\
+#current_lang{background:" THEME_UI ";color:#fff}\
 input[type=checkbox]{accent-color: rgb(255, 255, 128);}";
 
 #define STATIC_PREFIX "/" INTL_LANG "_s1"
 
 const char WEB_PAGE_HEADER_HEAD[] PROGMEM = "<meta name='viewport' content='width=device-width'/>	\
-<meta name='theme-color' content='#055d52'>	\
-<link rel='stylesheet' href='" STATIC_PREFIX "?r=css'>	\
+<meta name='theme-color' content='" THEME_BANNER "'>	\
+<link rel='stylesheet' href='" STATIC_PREFIX "?r=css&v=3'>	\
 </style>	\
 </head><body>	\
 <div class='canvas'>	\
 <a class='b' href='/' style='background:none;display:inline'>	\
-<img src='" STATIC_PREFIX "?r=logo' alt='" INTL_BACK_TO_HOME "' style='float:left;margin:16px' width='100' height='89'/></a>";
+<img src='" STATIC_PREFIX "?r=logo&v=2' alt='" INTL_BACK_TO_HOME "' style='float:left;margin:16px' width='100' height='89'/></a>";
 
 const char WEB_PAGE_HEADER_BODY[] PROGMEM = "<h3 style='margin:0 10px; color:#fff;'>" INTL_PM_SENSOR "</h3>	\
 <br/><small style='color:#fff;font-weight:700'>ID: {id} ({macid})<br/>" INTL_FIRMWARE ": " SOFTWARE_VERSION_STR "/" INTL_LANG "&nbsp;(" __DATE__ ")<br/>	\
