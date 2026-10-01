@@ -2620,18 +2620,30 @@ static String form_submit(const String &value)
 
 // Disable Firmware opties (FvD)
 
-static String form_select_lang()
+/*
+	Language of the NEXT firmware update (the running firmware has its language compiled in).
+	Kit builds (OTA_USE_BUILD_LANG): only the languages published on the kit update server.
+*/
+static bool otaLangOffered(const String &lang)
 {
 #if defined(OTA_USE_BUILD_LANG)
-	// kit builds always run and update in their compiled language: no selector, just keep the
-	// stored value in sync with the firmware language (fixes a stray "DE" saved by older pages).
-	return F("<input type='hidden' id='current_lang' name='current_lang' value='" CURRENT_LANG "'/>");
+	return lang == F("CZ") || lang == F("EN");
+#else
+	return lang.length() == 2;
 #endif
+}
+
+static String form_select_lang()
+{
 	String s_select = F(" selected='selected'");
 	String s = F("<tr>"
 				 "<td>" INTL_LANGUAGE ":&nbsp;</td>"
 				 "<td>"
 				 "<select id='current_lang' name='current_lang'>"
+#if defined(OTA_USE_BUILD_LANG)
+				    "<option value='CZ'>Čeština (CZ)</option>"
+					"<option value='EN'>English (EN)</option>"
+#else
 				//  "<option value='BG'>Bulgarian (BG)</option>"
 				//  "<option value='CN'>中文 (CN)</option>"
 				    "<option value='CZ'>Čeština (CZ)</option>"
@@ -2659,13 +2671,14 @@ static String form_select_lang()
 				//  "<option value='SE'>Svenska (SE)</option>"
 				//  "<option value='TR'>Türkçe (TR)</option>"
 				//  "<option value='UA'>український (UA)</option>"
+#endif
 				 "</select>"
 				 "</td>"
 				 "</tr>");
 
 	String lang(cfg::current_lang);
-	if (lang.length() != 2 || s.indexOf("'" + lang + "'>") < 0)
-	{	// stored value empty or not offered => preselect the firmware language.
+	if (!otaLangOffered(lang) || s.indexOf("'" + lang + "'>") < 0)
+	{	// stored value empty or not offered (e.g. a stray "DE") => preselect the firmware language.
 		lang = CURRENT_LANG;
 	}
 
@@ -7429,17 +7442,11 @@ static void StartTwoStageOTAUpdate()
 #if defined(ESP8266)
 	debug_outln_info(F("StartTwoStageOTAUpdate"));
 
-#if defined(OTA_USE_BUILD_LANG)
-	// kit builds: always fetch the language this firmware was built with (the config
-	// language can hold a wrong value, e.g. "DE" saved by an older config page without CZ).
-	String lang_variant(CURRENT_LANG);
-#else
 	String lang_variant(cfg::current_lang);
-	if (lang_variant.length() != 2)
-	{
+	if (!otaLangOffered(lang_variant))
+	{	// empty or not offered (e.g. a stray "DE" in a kit build) => firmware language.
 		lang_variant = CURRENT_LANG;
 	}
-#endif
 
 	lang_variant.toLowerCase();
 

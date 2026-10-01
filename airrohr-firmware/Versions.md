@@ -19,7 +19,8 @@ FWL-2026-10-B1 (senzorvzduchu fork, SEN55 kit)
   Update loader built from airrohr-update-loader (loader-002.bin).
   Kit builds (-DOTA_USE_BUILD_LANG) always download their own language variant. Czech added to the language selector
   (it was commented out, so a saved config silently got "DE").
-  Kit builds show no language selector at all (hidden field keeps the stored language equal to the firmware language).
+  The language selector chooses the language of the NEXT update; kit builds offer only CZ and EN (the languages on the
+  update server) and fall back to the firmware language when the stored value is not offered.
 
 
 FWL-2025-10-P7
