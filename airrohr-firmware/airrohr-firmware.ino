@@ -155,7 +155,7 @@
  #define SOFTWARE_VERSION_STR "FWL-2025-10-B7"
 #else
 // Production / Release version:
- #define SOFTWARE_VERSION_STR "FWL-2026-10-B1"
+ #define SOFTWARE_VERSION_STR "FWL-2026-10-B2"
 #endif
 
 String SOFTWARE_VERSION(SOFTWARE_VERSION_STR);
@@ -8954,6 +8954,46 @@ static void setupNetworkTime()
 	configTime(EU_TIMEZONE, 0, ntpServer1, ntpServer2); // set Daylight Saving => NTP with auto-switching between summer/winter time.
 }
 
+/// @brief Append the SEN5x VOC / NOx index to a sensordatavalues JSON string (ends with "]}").
+/// Not sent to Sensor.Community (server response code = 400), only to our own outputs (custom API, InfluxDB, MQTT).
+/// Invalid values (< 0, i.e. no valid read or NOx meaningless after a sensor stop) are left out instead of sending "-1".
+/// @param json   JSON string "{...,\"sensordatavalues\":[...]}" to extend in place.
+/// @param prefix sensor type prefix incl. trailing '_' (kit build: "SEN55_").
+/// @return true when at least one value was appended.
+static bool addSen5xGasIndex2Json(String &json, const String &prefix)
+{
+	if (!cfg::sen5x_read || is_Sen5x_init_failed)
+	{
+		return false;
+	}
+
+	bool voc_valid = last_value_SEN5X_VOC >= 0.0f;
+	bool nox_valid = last_value_SEN5X_NOX >= 0.0f;
+
+	if ((!voc_valid && !nox_valid) || !json.endsWith(F("]}")))
+	{
+		return false;
+	}
+
+	json.remove(json.length() - 2);		// remove "]}"
+	json += ',';
+
+	if (nox_valid)
+	{	// gas index is an integer 1..500, send without decimals.
+		add_Value2Json(json, FPSTR((prefix + F("NOX")).c_str()), String(last_value_SEN5X_NOX, 0));
+	}
+
+	if (voc_valid)
+	{
+		add_Value2Json(json, FPSTR((prefix + F("VOC")).c_str()), String(last_value_SEN5X_VOC, 0));
+	}
+
+	json.remove(json.length() - 1);		// remove ','
+	json += "]}";						// set JSON end chars.
+
+	return true;
+}
+
 /// @brief Send data to optional APIs (Madavi, OpenSenseMap, Feinstaub-App, aircms, influxdb, custom API).
 /// @param data
 /// @return total time spent sending data to all APIs in milliseconds.
@@ -9067,7 +9107,12 @@ static unsigned long sendDataToOptionalApis(const String &data)
 		debug_outln_info(FPSTR(DBG_TXT_SENDING_TO), F("custom influx db: "));
 
 		RESERVE_STRING(data_4_influxdb, LARGE_STR);
-		create_influxdb_string_from_data(data_4_influxdb, (cfg::sen5x_read && (!is_Sen5x_init_failed)) ? data_sensemap : data);
+		RESERVE_STRING(data_4_influx_src, LARGE_STR);
+
+		data_4_influx_src = (cfg::sen5x_read && (!is_Sen5x_init_failed)) ? data_sensemap : data;
+		addSen5xGasIndex2Json(data_4_influx_src, String(cfg::sen5x_sym_th) + '_');	// VOC/NOx index (kit: SEN55_VOC, SEN55_NOX).
+
+		create_influxdb_string_from_data(data_4_influxdb, data_4_influx_src);
 
 		sum_send_time += sendData(LoggerInflux, data_4_influxdb, 0, cfg::host_influx, cfg::url_influx);
 	}
@@ -9080,6 +9125,10 @@ static unsigned long sendDataToOptionalApis(const String &data)
 		RESERVE_STRING(data_to_send, LARGE_STR);
 
 		data_to_send = (cfg::sen5x_read && (!is_Sen5x_init_failed)) ? data_sensemap : data;
+
+		// VOC/NOx index for our own API (aqi.eco etc.), prefix follows the other SEN5x fields in this payload (kit: SEN55_).
+		addSen5xGasIndex2Json(data_to_send, String(cfg::sen5x_sym_th) + '_');
+
 		data_to_send.remove(0, 1);
 		
 		data_4_custom = F("{\"esp8266id\": \"");
@@ -9123,19 +9172,11 @@ static unsigned long sendDataToMQTTBroker(String &data)
 
 			if (data_sensemap.indexOf(result_SEN5X) > -1)
 			{
-				data_sensemap.remove(data_sensemap.length() - 2); // remove "]}"
-				data_sensemap += ',';
-
-				//add_Value2Json(data_sensemap, FPSTR((result_SEN5X + F("TPS")).c_str()), String(last_value_SEN5X_TS));
-				add_Value2Json(data_sensemap, FPSTR((result_SEN5X + F("NOX")).c_str()), String(last_value_SEN5X_NOX));
-				add_Value2Json(data_sensemap, FPSTR((result_SEN5X + F("VOC")).c_str()), String(last_value_SEN5X_VOC));
-				//add_Value2Json(data_sensemap, FPSTR((String(F("SEN5X_")) + F("VOC")).c_str()), F("\nVOC: "), last_value_SEN5X_VOC);
-
-				data_sensemap.remove(data_sensemap.length() - 1); // remove ','
-				data_sensemap += "]}";							  // set JSON end chars.
-
-				// Add TPS, NOx, VOC to data string.
-				data = data_sensemap;
+				// Add NOx, VOC index to the data string, invalid values (-1) are left out.
+				if (addSen5xGasIndex2Json(data_sensemap, result_SEN5X))
+				{
+					data = data_sensemap;
+				}
 			}
 		}
 

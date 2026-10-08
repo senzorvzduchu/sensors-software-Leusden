@@ -1,3 +1,10 @@
+FWL-2026-10-B2 (senzorvzduchu fork, SEN55 kit)
+* SEN55: VOC / NOx index is now also sent to the custom API (aqi.eco etc.) and to InfluxDB, as <SEN5X_SYM_TH>_VOC /
+  <SEN5X_SYM_TH>_NOX (kit build: SEN55_VOC, SEN55_NOX), integer 1..500. Still not sent to Sensor.Community / Madavi /
+  openSenseMap (server response code = 400).
+* MQTT: invalid VOC / NOx index (no valid read, or NOx meaningless after a sensor stop) is left out of the payload
+  instead of being sent as "-1.00"; valid values are sent without decimals. Keys stay SEN5X_VOC / SEN5X_NOX.
+
 FWL-2026-10-B1 (senzorvzduchu fork, SEN55 kit)
 * SEN55: when "Fan always on" is off, the sensor is switched to "measurement without PM" (gas-only) between the PM windows
   instead of being stopped (SEN55 firmware >= 2.0). The VOC/NOx gas index algorithms keep running => valid VOC/NOx index.
